@@ -171,7 +171,7 @@ POST /api/subscriptions/billing/run
 
 ## Assignment PDF
 
-Place the provided test/assignment PDF in the repository root (e.g. `assignment.pdf`) before final submission if it is not already included.
+Included in the repo root: [`GGI-Backend-Test-Posture (1).pdf`](GGI-Backend-Test-Posture%20(1).pdf)
 
 ## Author
 
