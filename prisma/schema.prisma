@@ -1,0 +1,87 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+enum SubscriptionTier {
+  BASIC
+  PRO
+  ENTERPRISE
+}
+
+enum BillingCycle {
+  MONTHLY
+  YEARLY
+}
+
+enum SubscriptionStatus {
+  ACTIVE
+  CANCELLED
+  EXPIRED
+  PAYMENT_FAILED
+}
+
+model User {
+  id        String   @id @default(uuid())
+  email     String   @unique
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  chatMessages  ChatMessage[]
+  subscriptions Subscription[]
+  monthlyUsages MonthlyUsage[]
+}
+
+model ChatMessage {
+  id           String   @id @default(uuid())
+  userId       String
+  question     String
+  answer       String
+  inputTokens  Int
+  outputTokens Int
+  createdAt    DateTime @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId, createdAt])
+}
+
+model MonthlyUsage {
+  id               String   @id @default(uuid())
+  userId           String
+  month            DateTime
+  freeMessagesUsed Int      @default(0)
+  createdAt        DateTime @default(now())
+  updatedAt        DateTime @updatedAt
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, month])
+  @@index([userId])
+}
+
+model Subscription {
+  id                String             @id @default(uuid())
+  userId            String
+  tier              SubscriptionTier
+  billingCycle      BillingCycle
+  maxMessages       Int?
+  remainingMessages Int?
+  price             Decimal            @db.Decimal(10, 2)
+  startDate         DateTime
+  endDate           DateTime
+  renewalDate       DateTime
+  autoRenew         Boolean            @default(true)
+  status            SubscriptionStatus @default(ACTIVE)
+  createdAt         DateTime           @default(now())
+  updatedAt         DateTime           @updatedAt
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId, status])
+  @@index([userId, remainingMessages])
+  @@index([renewalDate])
+}
