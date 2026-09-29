@@ -1,10 +1,13 @@
+import { Inject, Injectable } from '@nestjs/common';
 import { BillingCycle, SubscriptionStatus, SubscriptionTier } from '@prisma/client';
 import { NotFoundError } from '../../../shared/domain/domain-error.js';
-import type { UserRepository } from '../../users/domain/user.repository.js';
-import type {
-  PaymentService,
-  SubscriptionEntity,
-  SubscriptionRepository,
+import { USER_REPOSITORY, type UserRepository } from '../../users/domain/user.repository.js';
+import {
+  PAYMENT_SERVICE,
+  SUBSCRIPTION_REPOSITORY,
+  type PaymentService,
+  type SubscriptionEntity,
+  type SubscriptionRepository,
 } from '../domain/subscription.repository.js';
 import {
   addBillingPeriod,
@@ -19,11 +22,12 @@ export interface CreateSubscriptionInput {
   autoRenew?: boolean;
 }
 
+@Injectable()
 export class SubscriptionService {
   constructor(
-    private readonly subscriptions: SubscriptionRepository,
-    private readonly users: UserRepository,
-    private readonly payments: PaymentService,
+    @Inject(SUBSCRIPTION_REPOSITORY) private readonly subscriptions: SubscriptionRepository,
+    @Inject(USER_REPOSITORY) private readonly users: UserRepository,
+    @Inject(PAYMENT_SERVICE) private readonly payments: PaymentService,
   ) {}
 
   async create(input: CreateSubscriptionInput): Promise<SubscriptionEntity> {
@@ -78,12 +82,7 @@ export class SubscriptionService {
     });
   }
 
-  async runBilling(now = new Date()): Promise<{
-    processed: number;
-    renewed: number;
-    failed: number;
-    results: Array<{ subscriptionId: string; success: boolean; reason?: string }>;
-  }> {
+  async runBilling(now = new Date()) {
     const due = await this.subscriptions.findDueForRenewal(now);
     const results: Array<{ subscriptionId: string; success: boolean; reason?: string }> = [];
     let renewed = 0;
@@ -118,11 +117,6 @@ export class SubscriptionService {
       results.push({ subscriptionId: sub.id, success: true });
     }
 
-    return {
-      processed: due.length,
-      renewed,
-      failed,
-      results,
-    };
+    return { processed: due.length, renewed, failed, results };
   }
 }

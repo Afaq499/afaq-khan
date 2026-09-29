@@ -1,28 +1,12 @@
-import {
-  Body,
-  Controller,
-  Get,
-  Inject,
-  Param,
-  Patch,
-  Post,
-  Query,
-} from '@nestjs/common';
-import { IsUUID } from 'class-validator';
+import { Body, Controller, Get, Param, Patch, Post, Query } from '@nestjs/common';
+import { UserIdQueryDto } from '../../../shared/presentation/dto/user-id-query.dto.js';
 import { SubscriptionService } from '../application/subscription.service.js';
 import { CreateSubscriptionDto } from './dto/create-subscription.dto.js';
 import { ToggleAutoRenewDto } from './dto/toggle-auto-renew.dto.js';
 
-class UserIdQueryDto {
-  @IsUUID()
-  userId!: string;
-}
-
 @Controller('subscriptions')
 export class SubscriptionsController {
-  constructor(
-    @Inject(SubscriptionService) private readonly subscriptionService: SubscriptionService,
-  ) {}
+  constructor(private readonly subscriptionService: SubscriptionService) {}
 
   @Post()
   create(@Body() dto: CreateSubscriptionDto) {

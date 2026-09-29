@@ -7,15 +7,8 @@ import { UsersController } from './presentation/users.controller.js';
 @Module({
   controllers: [UsersController],
   providers: [
-    {
-      provide: USER_REPOSITORY,
-      useClass: PrismaUserRepository,
-    },
-    {
-      provide: UsersService,
-      useFactory: (repo: PrismaUserRepository) => new UsersService(repo),
-      inject: [USER_REPOSITORY],
-    },
+    { provide: USER_REPOSITORY, useClass: PrismaUserRepository },
+    UsersService,
   ],
   exports: [UsersService, USER_REPOSITORY],
 })

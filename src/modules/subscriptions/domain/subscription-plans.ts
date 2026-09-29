@@ -17,5 +17,3 @@ export const SUBSCRIPTION_PLANS = {
     yearlyPrice: 2000,
   },
 } as const;
-
-export type SubscriptionPlanTier = keyof typeof SUBSCRIPTION_PLANS;

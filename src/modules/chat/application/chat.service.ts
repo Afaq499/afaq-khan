@@ -1,17 +1,30 @@
+import { Inject, Injectable } from '@nestjs/common';
 import { NotFoundError, QuotaExceededError } from '../../../shared/domain/domain-error.js';
 import { FREE_MESSAGES_PER_MONTH } from '../../subscriptions/domain/subscription-plans.js';
 import { pickBundleWithLatestRemainingQuota } from '../../subscriptions/domain/subscription.rules.js';
-import type { SubscriptionRepository } from '../../subscriptions/domain/subscription.repository.js';
-import type { UserRepository } from '../../users/domain/user.repository.js';
-import type { ChatRepository, OpenAIClient } from '../domain/chat.repository.js';
-import { startOfUtcMonth } from '../domain/month.util.js';
+import {
+  SUBSCRIPTION_REPOSITORY,
+  type SubscriptionRepository,
+} from '../../subscriptions/domain/subscription.repository.js';
+import { USER_REPOSITORY, type UserRepository } from '../../users/domain/user.repository.js';
+import {
+  CHAT_REPOSITORY,
+  OPENAI_CLIENT,
+  type ChatRepository,
+  type OpenAIClient,
+} from '../domain/chat.repository.js';
 
+function startOfUtcMonth(date = new Date()): Date {
+  return new Date(Date.UTC(date.getUTCFullYear(), date.getUTCMonth(), 1));
+}
+
+@Injectable()
 export class ChatService {
   constructor(
-    private readonly chat: ChatRepository,
-    private readonly users: UserRepository,
-    private readonly subscriptions: SubscriptionRepository,
-    private readonly openAI: OpenAIClient,
+    @Inject(CHAT_REPOSITORY) private readonly chat: ChatRepository,
+    @Inject(USER_REPOSITORY) private readonly users: UserRepository,
+    @Inject(SUBSCRIPTION_REPOSITORY) private readonly subscriptions: SubscriptionRepository,
+    @Inject(OPENAI_CLIENT) private readonly openAI: OpenAIClient,
   ) {}
 
   async ask(userId: string, question: string) {
@@ -22,8 +35,7 @@ export class ChatService {
 
     const month = startOfUtcMonth();
     const usage = await this.chat.getOrCreateMonthlyUsage(userId, month);
-    const freeRemaining = FREE_MESSAGES_PER_MONTH - usage.freeMessagesUsed;
-    const useFree = freeRemaining > 0;
+    const useFree = usage.freeMessagesUsed < FREE_MESSAGES_PER_MONTH;
 
     let subscriptionId: string | null = null;
 
@@ -54,13 +66,7 @@ export class ChatService {
     });
 
     return {
-      id: message.id,
-      userId: message.userId,
-      question: message.question,
-      answer: message.answer,
-      inputTokens: message.inputTokens,
-      outputTokens: message.outputTokens,
-      createdAt: message.createdAt,
+      ...message,
       quota: {
         usedFreeSlot: useFree,
         freeMessagesUsed,
@@ -71,18 +77,12 @@ export class ChatService {
   }
 
   async history(userId: string) {
-    const user = await this.users.findById(userId);
-    if (!user) {
-      throw new NotFoundError('User', userId);
-    }
+    await this.ensureUser(userId);
     return this.chat.listMessages(userId);
   }
 
   async usage(userId: string) {
-    const user = await this.users.findById(userId);
-    if (!user) {
-      throw new NotFoundError('User', userId);
-    }
+    await this.ensureUser(userId);
 
     const month = startOfUtcMonth();
     const usage = await this.chat.getOrCreateMonthlyUsage(userId, month);
@@ -102,5 +102,12 @@ export class ChatService {
         status: s.status,
       })),
     };
+  }
+
+  private async ensureUser(userId: string) {
+    const user = await this.users.findById(userId);
+    if (!user) {
+      throw new NotFoundError('User', userId);
+    }
   }
 }

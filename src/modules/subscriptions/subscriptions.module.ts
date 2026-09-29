@@ -1,5 +1,4 @@
 import { Module } from '@nestjs/common';
-import { USER_REPOSITORY } from '../users/domain/user.repository.js';
 import { UsersModule } from '../users/users.module.js';
 import { SubscriptionService } from './application/subscription.service.js';
 import {
@@ -14,23 +13,9 @@ import { SubscriptionsController } from './presentation/subscriptions.controller
   imports: [UsersModule],
   controllers: [SubscriptionsController],
   providers: [
-    {
-      provide: SUBSCRIPTION_REPOSITORY,
-      useClass: PrismaSubscriptionRepository,
-    },
-    {
-      provide: PAYMENT_SERVICE,
-      useClass: MockPaymentService,
-    },
-    {
-      provide: SubscriptionService,
-      useFactory: (
-        subscriptions: PrismaSubscriptionRepository,
-        users: unknown,
-        payments: MockPaymentService,
-      ) => new SubscriptionService(subscriptions, users as never, payments),
-      inject: [SUBSCRIPTION_REPOSITORY, USER_REPOSITORY, PAYMENT_SERVICE],
-    },
+    { provide: SUBSCRIPTION_REPOSITORY, useClass: PrismaSubscriptionRepository },
+    { provide: PAYMENT_SERVICE, useClass: MockPaymentService },
+    SubscriptionService,
   ],
   exports: [SubscriptionService, SUBSCRIPTION_REPOSITORY],
 })

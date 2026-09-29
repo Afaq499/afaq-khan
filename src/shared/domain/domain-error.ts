@@ -1,10 +1,4 @@
-export type DomainErrorCode =
-  | 'QUOTA_EXCEEDED'
-  | 'NOT_FOUND'
-  | 'VALIDATION_ERROR'
-  | 'CONFLICT'
-  | 'PAYMENT_FAILED'
-  | 'FORBIDDEN';
+export type DomainErrorCode = 'QUOTA_EXCEEDED' | 'NOT_FOUND' | 'CONFLICT';
 
 export class DomainError extends Error {
   constructor(

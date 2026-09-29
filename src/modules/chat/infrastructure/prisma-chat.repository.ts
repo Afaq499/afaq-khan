@@ -1,6 +1,7 @@
 import { Injectable } from '@nestjs/common';
 import { PrismaService } from '../../../database/prisma.service.js';
 import { DomainError } from '../../../shared/domain/domain-error.js';
+import { FREE_MESSAGES_PER_MONTH } from '../../subscriptions/domain/subscription-plans.js';
 import type {
   ChatMessageEntity,
   ChatRepository,
@@ -11,16 +12,6 @@ import type {
 export class PrismaChatRepository implements ChatRepository {
   constructor(private readonly prisma: PrismaService) {}
 
-  createMessage(data: {
-    userId: string;
-    question: string;
-    answer: string;
-    inputTokens: number;
-    outputTokens: number;
-  }): Promise<ChatMessageEntity> {
-    return this.prisma.chatMessage.create({ data });
-  }
-
   listMessages(userId: string): Promise<ChatMessageEntity[]> {
     return this.prisma.chatMessage.findMany({
       where: { userId },
@@ -28,7 +19,7 @@ export class PrismaChatRepository implements ChatRepository {
     });
   }
 
-  async getOrCreateMonthlyUsage(userId: string, month: Date): Promise<MonthlyUsageEntity> {
+  getOrCreateMonthlyUsage(userId: string, month: Date): Promise<MonthlyUsageEntity> {
     return this.prisma.monthlyUsage.upsert({
       where: {
         userId_month: { userId, month },
@@ -71,7 +62,7 @@ export class PrismaChatRepository implements ChatRepository {
         const updated = await tx.monthlyUsage.updateMany({
           where: {
             id: usage.id,
-            freeMessagesUsed: { lt: 3 },
+            freeMessagesUsed: { lt: FREE_MESSAGES_PER_MONTH },
           },
           data: {
             freeMessagesUsed: { increment: 1 },
@@ -91,9 +82,12 @@ export class PrismaChatRepository implements ChatRepository {
           where: { id: input.subscriptionId },
         });
         if (!sub) {
-          throw new DomainError('NOT_FOUND', 'Subscription not found during deduction', {
-            subscriptionId: input.subscriptionId,
-          }, 404);
+          throw new DomainError(
+            'NOT_FOUND',
+            'Subscription not found during deduction',
+            { subscriptionId: input.subscriptionId },
+            404,
+          );
         }
 
         if (sub.maxMessages !== null) {

@@ -1,16 +1,11 @@
-import { Body, Controller, Get, Inject, Post, Query } from '@nestjs/common';
-import { IsUUID } from 'class-validator';
+import { Body, Controller, Get, Post, Query } from '@nestjs/common';
+import { UserIdQueryDto } from '../../../shared/presentation/dto/user-id-query.dto.js';
 import { ChatService } from '../application/chat.service.js';
 import { CreateChatMessageDto } from './dto/create-chat-message.dto.js';
 
-class UserIdQueryDto {
-  @IsUUID()
-  userId!: string;
-}
-
 @Controller('chat')
 export class ChatController {
-  constructor(@Inject(ChatService) private readonly chatService: ChatService) {}
+  constructor(private readonly chatService: ChatService) {}
 
   @Post('messages')
   ask(@Body() dto: CreateChatMessageDto) {

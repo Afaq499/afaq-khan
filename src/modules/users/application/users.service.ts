@@ -1,8 +1,10 @@
+import { Inject, Injectable } from '@nestjs/common';
 import { ConflictError, NotFoundError } from '../../../shared/domain/domain-error.js';
-import type { UserEntity, UserRepository } from '../domain/user.repository.js';
+import { USER_REPOSITORY, type UserEntity, type UserRepository } from '../domain/user.repository.js';
 
+@Injectable()
 export class UsersService {
-  constructor(private readonly users: UserRepository) {}
+  constructor(@Inject(USER_REPOSITORY) private readonly users: UserRepository) {}
 
   async create(email: string): Promise<UserEntity> {
     const existing = await this.users.findByEmail(email);

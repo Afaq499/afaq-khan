@@ -20,21 +20,10 @@ export interface MonthlyUsageEntity {
 export const CHAT_REPOSITORY = Symbol('CHAT_REPOSITORY');
 
 export interface ChatRepository {
-  createMessage(data: {
-    userId: string;
-    question: string;
-    answer: string;
-    inputTokens: number;
-    outputTokens: number;
-  }): Promise<ChatMessageEntity>;
-
   listMessages(userId: string): Promise<ChatMessageEntity[]>;
 
   getOrCreateMonthlyUsage(userId: string, month: Date): Promise<MonthlyUsageEntity>;
 
-  /**
-   * Atomically: consume free or subscription quota + persist chat message.
-   */
   consumeQuotaAndSaveMessage(input: {
     userId: string;
     month: Date;
